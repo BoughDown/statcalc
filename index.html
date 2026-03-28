@@ -1,0 +1,385 @@
+import { useState } from “react”;
+
+const LEAGUE_AVERAGES = {
+// ast = league avg assist percentage among all players (~17-20% historically)
+1950:{ppg:13.8,ts:0.411,ortg:91.2,drtg:91.2,pace:99.0,ast:15.2},
+1951:{ppg:14.3,ts:0.418,ortg:92.1,drtg:92.1,pace:99.0,ast:15.4},
+1952:{ppg:14.9,ts:0.421,ortg:93.5,drtg:93.5,pace:100.2,ast:15.6},
+1953:{ppg:15.4,ts:0.427,ortg:94.0,drtg:94.0,pace:100.4,ast:15.8},
+1954:{ppg:14.8,ts:0.423,ortg:91.8,drtg:91.8,pace:99.1,ast:15.5},
+1955:{ppg:14.9,ts:0.432,ortg:93.1,drtg:93.1,pace:101.4,ast:15.7},
+1956:{ppg:15.9,ts:0.438,ortg:95.0,drtg:95.0,pace:103.2,ast:16.0},
+1957:{ppg:16.2,ts:0.441,ortg:95.8,drtg:95.8,pace:103.8,ast:16.2},
+1958:{ppg:16.8,ts:0.444,ortg:97.0,drtg:97.0,pace:106.0,ast:16.4},
+1959:{ppg:18.2,ts:0.452,ortg:101.5,drtg:101.5,pace:118.0,ast:16.6},
+1960:{ppg:18.5,ts:0.455,ortg:102.6,drtg:102.6,pace:126.1,ast:16.8},
+1961:{ppg:19.0,ts:0.461,ortg:104.0,drtg:104.0,pace:127.1,ast:17.0},
+1962:{ppg:19.4,ts:0.463,ortg:105.2,drtg:105.2,pace:125.8,ast:17.1},
+1963:{ppg:18.8,ts:0.460,ortg:103.6,drtg:103.6,pace:121.1,ast:17.2},
+1964:{ppg:18.6,ts:0.458,ortg:103.0,drtg:103.0,pace:117.2,ast:17.3},
+1965:{ppg:18.6,ts:0.459,ortg:103.1,drtg:103.1,pace:115.3,ast:17.4},
+1966:{ppg:18.9,ts:0.461,ortg:104.0,drtg:104.0,pace:116.0,ast:17.5},
+1967:{ppg:19.2,ts:0.467,ortg:105.3,drtg:105.3,pace:117.4,ast:17.6},
+1968:{ppg:18.8,ts:0.463,ortg:104.1,drtg:104.1,pace:114.5,ast:17.5},
+1969:{ppg:18.2,ts:0.459,ortg:102.9,drtg:102.9,pace:112.6,ast:17.4},
+1970:{ppg:17.8,ts:0.461,ortg:103.6,drtg:103.6,pace:110.1,ast:17.6},
+1971:{ppg:17.5,ts:0.459,ortg:102.6,drtg:102.6,pace:108.3,ast:17.7},
+1972:{ppg:17.4,ts:0.460,ortg:102.8,drtg:102.8,pace:107.5,ast:17.8},
+1973:{ppg:17.9,ts:0.467,ortg:104.5,drtg:104.5,pace:109.3,ast:17.9},
+1974:{ppg:17.6,ts:0.470,ortg:104.9,drtg:104.9,pace:107.8,ast:18.0},
+1975:{ppg:17.8,ts:0.474,ortg:105.3,drtg:105.3,pace:108.4,ast:18.1},
+1976:{ppg:17.8,ts:0.476,ortg:105.5,drtg:105.5,pace:107.9,ast:18.2},
+1977:{ppg:18.3,ts:0.483,ortg:106.8,drtg:106.8,pace:109.2,ast:18.3},
+1978:{ppg:18.4,ts:0.488,ortg:107.5,drtg:107.5,pace:109.6,ast:18.4},
+1979:{ppg:18.5,ts:0.491,ortg:108.0,drtg:108.0,pace:109.9,ast:18.5},
+1980:{ppg:18.8,ts:0.498,ortg:108.9,drtg:108.9,pace:110.4,ast:18.6},
+1981:{ppg:18.5,ts:0.496,ortg:108.1,drtg:108.1,pace:108.8,ast:18.5},
+1982:{ppg:18.6,ts:0.499,ortg:108.6,drtg:108.6,pace:109.0,ast:18.6},
+1983:{ppg:18.4,ts:0.496,ortg:108.0,drtg:108.0,pace:108.6,ast:18.7},
+1984:{ppg:19.0,ts:0.503,ortg:109.5,drtg:109.5,pace:109.7,ast:18.8},
+1985:{ppg:19.8,ts:0.516,ortg:110.8,drtg:110.8,pace:111.2,ast:19.0},
+1986:{ppg:19.9,ts:0.518,ortg:111.3,drtg:111.3,pace:111.5,ast:19.1},
+1987:{ppg:20.5,ts:0.524,ortg:112.4,drtg:112.4,pace:112.1,ast:19.3},
+1988:{ppg:20.0,ts:0.521,ortg:111.5,drtg:111.5,pace:110.6,ast:19.2},
+1989:{ppg:19.7,ts:0.520,ortg:111.1,drtg:111.1,pace:110.0,ast:19.1},
+1990:{ppg:19.7,ts:0.522,ortg:111.3,drtg:111.3,pace:110.0,ast:19.0},
+1991:{ppg:19.3,ts:0.518,ortg:110.4,drtg:110.4,pace:108.7,ast:18.9},
+1992:{ppg:18.9,ts:0.514,ortg:109.5,drtg:109.5,pace:107.4,ast:18.8},
+1993:{ppg:19.3,ts:0.518,ortg:110.4,drtg:110.4,pace:107.8,ast:18.9},
+1994:{ppg:18.0,ts:0.511,ortg:107.4,drtg:107.4,pace:105.0,ast:18.5},
+1995:{ppg:18.2,ts:0.514,ortg:107.9,drtg:107.9,pace:105.5,ast:18.6},
+1996:{ppg:18.2,ts:0.515,ortg:108.1,drtg:108.1,pace:105.8,ast:18.6},
+1997:{ppg:18.2,ts:0.515,ortg:108.2,drtg:108.2,pace:105.3,ast:18.7},
+1998:{ppg:17.9,ts:0.512,ortg:107.5,drtg:107.5,pace:103.8,ast:18.5},
+1999:{ppg:17.0,ts:0.503,ortg:104.8,drtg:104.8,pace:101.7,ast:18.2},
+2000:{ppg:17.8,ts:0.511,ortg:106.3,drtg:106.3,pace:103.8,ast:18.4},
+2001:{ppg:18.0,ts:0.515,ortg:106.9,drtg:106.9,pace:104.1,ast:18.5},
+2002:{ppg:17.8,ts:0.514,ortg:106.5,drtg:106.5,pace:103.6,ast:18.4},
+2003:{ppg:17.9,ts:0.516,ortg:106.8,drtg:106.8,pace:103.8,ast:18.5},
+2004:{ppg:17.0,ts:0.506,ortg:104.3,drtg:104.3,pace:101.9,ast:18.1},
+2005:{ppg:17.2,ts:0.513,ortg:105.1,drtg:105.1,pace:102.0,ast:18.2},
+2006:{ppg:17.9,ts:0.522,ortg:106.8,drtg:106.8,pace:103.3,ast:18.5},
+2007:{ppg:18.0,ts:0.525,ortg:107.0,drtg:107.0,pace:103.6,ast:18.6},
+2008:{ppg:18.0,ts:0.527,ortg:107.0,drtg:107.0,pace:103.3,ast:18.6},
+2009:{ppg:17.9,ts:0.526,ortg:107.0,drtg:107.0,pace:103.0,ast:18.7},
+2010:{ppg:17.8,ts:0.527,ortg:107.3,drtg:107.3,pace:102.4,ast:18.7},
+2011:{ppg:17.7,ts:0.527,ortg:107.3,drtg:107.3,pace:102.4,ast:18.8},
+2012:{ppg:17.8,ts:0.530,ortg:107.9,drtg:107.9,pace:103.0,ast:18.9},
+2013:{ppg:18.0,ts:0.533,ortg:108.3,drtg:108.3,pace:103.0,ast:19.0},
+2014:{ppg:18.3,ts:0.538,ortg:108.8,drtg:108.8,pace:103.4,ast:19.2},
+2015:{ppg:18.7,ts:0.542,ortg:109.4,drtg:109.4,pace:103.8,ast:19.4},
+2016:{ppg:19.0,ts:0.544,ortg:109.7,drtg:109.7,pace:104.6,ast:19.6},
+2017:{ppg:19.3,ts:0.549,ortg:110.5,drtg:110.5,pace:105.6,ast:19.8},
+2018:{ppg:19.8,ts:0.556,ortg:111.2,drtg:111.2,pace:106.5,ast:20.0},
+2019:{ppg:20.0,ts:0.560,ortg:111.8,drtg:111.8,pace:107.0,ast:20.2},
+2020:{ppg:19.8,ts:0.558,ortg:111.6,drtg:111.6,pace:106.4,ast:20.1},
+2021:{ppg:19.9,ts:0.564,ortg:112.3,drtg:112.3,pace:106.5,ast:20.3},
+2022:{ppg:20.0,ts:0.564,ortg:112.3,drtg:112.3,pace:106.4,ast:20.4},
+2023:{ppg:20.1,ts:0.570,ortg:113.0,drtg:113.0,pace:106.5,ast:20.5},
+2024:{ppg:20.3,ts:0.573,ortg:113.6,drtg:113.6,pace:107.0,ast:20.6},
+2025:{ppg:20.5,ts:0.576,ortg:114.0,drtg:114.0,pace:107.4,ast:20.7},
+};
+
+const COLORS = { a: “#00f5a0”, b: “#38bdf8” };
+
+function calcStats(inputs, mode) {
+const y = parseInt(inputs.year);
+if (!LEAGUE_AVERAGES[y]) return null;
+const avg = LEAGUE_AVERAGES[y];
+const r = {};
+if (mode === “player” || mode === “both”) {
+if (inputs.ppg) r.ppgPlus = ((parseFloat(inputs.ppg) * (107 / avg.pace)) / avg.ppg) * 100;
+if (inputs.ts) r.tsPlus = (parseFloat(inputs.ts) / avg.ts) * 100;
+if (inputs.ast) r.astPlus = (parseFloat(inputs.ast) / avg.ast) * 100;
+if (inputs.bpm) {
+const v = parseFloat(inputs.bpm);
+r.bpmPlus = v <= 0 ? Math.max(40, 100 + v * 8) : 100 + (Math.log(v + 1) / Math.log(11)) * 63;
+}
+if (inputs.dbpm) {
+const d = parseFloat(inputs.dbpm);
+r.dbpmPlus = d <= 0 ? Math.max(40, 100 + d * 8) : 100 + (Math.log(d + 1) / Math.log(9)) * 63;
+}
+}
+if (mode === “team” || mode === “both”) {
+if (inputs.ortg) r.ortgPlus = (parseFloat(inputs.ortg) / avg.ortg) * 100;
+if (inputs.drtg) r.drtgPlus = (avg.drtg / parseFloat(inputs.drtg)) * 100;
+}
+return r;
+}
+
+function getColor(val) {
+if (val >= 160) return “#00f5a0”;
+if (val >= 130) return “#4ade80”;
+if (val >= 115) return “#86efac”;
+if (val >= 100) return “#cbd5e1”;
+if (val >= 85) return “#fca5a5”;
+return “#f87171”;
+}
+
+function getLabel(val) {
+if (val >= 160) return “All-Time Elite”;
+if (val >= 130) return “MVP Caliber”;
+if (val >= 115) return “All-Star”;
+if (val >= 100) return “Above Avg”;
+if (val >= 85) return “Below Avg”;
+return “Replacement”;
+}
+
+function SmallInput({ label, value, onChange, placeholder, hint, accentColor, isText }) {
+return (
+<div style={{ marginBottom: 12 }}>
+<label style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 9, color: “#64748b”, letterSpacing: 2, textTransform: “uppercase”, display: “block”, marginBottom: 4 }}>{label}</label>
+<input
+type={isText ? “text” : “number”}
+step=“0.01”
+value={value}
+onChange={e => onChange(e.target.value)}
+placeholder={placeholder}
+style={{
+width: “100%”, background: “#020817”, border: “1px solid #1e293b”,
+borderRadius: 6, padding: “8px 10px”, color: “#f1f5f9”,
+fontFamily: “‘Space Mono’, monospace”, fontSize: 11,
+outline: “none”, boxSizing: “border-box”, transition: “border-color 0.2s”
+}}
+onFocus={e => e.target.style.borderColor = accentColor}
+onBlur={e => e.target.style.borderColor = “#1e293b”}
+/>
+{hint && <div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 8, color: “#334155”, marginTop: 3 }}>{hint}</div>}
+</div>
+);
+}
+
+function PlayerPanel({ label, color, inputs, onChange, mode }) {
+const avg = LEAGUE_AVERAGES[parseInt(inputs.year)];
+return (
+<div style={{ background: “#0a1628”, border: `1px solid ${color}33`, borderTop: `3px solid ${color}`, borderRadius: 12, padding: 18, flex: 1, minWidth: 0 }}>
+<div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 9, color, letterSpacing: 3, textTransform: “uppercase”, marginBottom: 14 }}>{label}</div>
+<SmallInput label=“Name” value={inputs.name} onChange={v => onChange(“name”, v)} placeholder=“e.g. Kareem” accentColor={color} isText />
+<SmallInput label=“Year” value={inputs.year} onChange={v => onChange(“year”, v)} placeholder=“1950–2025” accentColor={color} />
+{avg && <div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 8, color: “#334155”, marginBottom: 12, marginTop: -8 }}>{avg.ppg}ppg · {(avg.ts*100).toFixed(1)}TS% · pace {avg.pace}</div>}
+{!avg && inputs.year && <div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 8, color: “#f87171”, marginBottom: 12, marginTop: -8 }}>Invalid year (1950–2025)</div>}
+{(mode === “player” || mode === “both”) && <>
+<SmallInput label=“PPG” value={inputs.ppg} onChange={v => onChange(“ppg”, v)} placeholder=“e.g. 34.8” hint=“Points per game” accentColor={color} />
+<SmallInput label=“TS%” value={inputs.ts} onChange={v => onChange(“ts”, v)} placeholder=“e.g. 0.559” hint=“Decimal (e.g. 0.580)” accentColor={color} />
+<SmallInput label=“BPM” value={inputs.bpm} onChange={v => onChange(“bpm”, v)} placeholder=“e.g. 8.2” hint=“Box Plus/Minus (rate stat)” accentColor={color} />
+<SmallInput label=“AST%” value={inputs.ast} onChange={v => onChange(“ast”, v)} placeholder=“e.g. 38.5” hint=”% of teammate FGs assisted” accentColor={color} />
+<SmallInput label=“DBPM” value={inputs.dbpm} onChange={v => onChange(“dbpm”, v)} placeholder=“e.g. 3.4” hint=“Defensive Box Plus/Minus” accentColor={color} />
+</>}
+{(mode === “team” || mode === “both”) && <>
+<SmallInput label=“Off. Rating” value={inputs.ortg} onChange={v => onChange(“ortg”, v)} placeholder=“e.g. 118.4” hint=“Pts per 100 poss.” accentColor={color} />
+<SmallInput label=“Def. Rating” value={inputs.drtg} onChange={v => onChange(“drtg”, v)} placeholder=“e.g. 108.1” hint=“Pts allowed per 100” accentColor={color} />
+</>}
+</div>
+);
+}
+
+const STAT_KEYS = [
+{ key: “ppgPlus”, label: “PPG+” },
+{ key: “tsPlus”, label: “TS%+” },
+{ key: “astPlus”, label: “AST%+” },
+{ key: “bpmPlus”, label: “BPM+” },
+{ key: “dbpmPlus”, label: “DBPM+” },
+{ key: “ortgPlus”, label: “Off PPG+” },
+{ key: “drtgPlus”, label: “Def PPG+” },
+];
+
+function CompareRow({ statLabel, valA, valB, nameA, nameB }) {
+if (valA === undefined && valB === undefined) return null;
+const aWins = valA !== undefined && valB !== undefined && valA > valB;
+const bWins = valA !== undefined && valB !== undefined && valB > valA;
+const max = Math.max(valA ?? 0, valB ?? 0, 160);
+return (
+<div style={{ marginBottom: 20 }}>
+<div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 9, color: “#475569”, letterSpacing: 2, textTransform: “uppercase”, marginBottom: 8 }}>{statLabel}</div>
+{valA !== undefined && (
+<div style={{ marginBottom: 6 }}>
+<div style={{ display: “flex”, justifyContent: “space-between”, alignItems: “center”, marginBottom: 3 }}>
+<span style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 9, color: aWins ? COLORS.a : “#64748b” }}>{nameA || “Player A”}{aWins ? “ ▲” : “”}</span>
+<div style={{ display: “flex”, alignItems: “center”, gap: 8 }}>
+<span style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 8, color: getColor(valA), background: `${getColor(valA)}22`, padding: “2px 7px”, borderRadius: 99 }}>{getLabel(valA)}</span>
+<span style={{ fontFamily: “‘Bebas Neue’, cursive”, fontSize: 24, color: aWins ? COLORS.a : “#94a3b8”, letterSpacing: 1 }}>{valA.toFixed(1)}</span>
+</div>
+</div>
+<div style={{ height: 5, background: “#1e293b”, borderRadius: 99, overflow: “hidden” }}>
+<div style={{ width: `${Math.min((valA / max) * 100, 100)}%`, height: “100%”, background: COLORS.a, borderRadius: 99, boxShadow: `0 0 6px ${COLORS.a}88`, transition: “width 0.8s cubic-bezier(0.16,1,0.3,1)” }} />
+</div>
+</div>
+)}
+{valB !== undefined && (
+<div>
+<div style={{ display: “flex”, justifyContent: “space-between”, alignItems: “center”, marginBottom: 3 }}>
+<span style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 9, color: bWins ? COLORS.b : “#64748b” }}>{nameB || “Player B”}{bWins ? “ ▲” : “”}</span>
+<div style={{ display: “flex”, alignItems: “center”, gap: 8 }}>
+<span style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 8, color: getColor(valB), background: `${getColor(valB)}22`, padding: “2px 7px”, borderRadius: 99 }}>{getLabel(valB)}</span>
+<span style={{ fontFamily: “‘Bebas Neue’, cursive”, fontSize: 24, color: bWins ? COLORS.b : “#94a3b8”, letterSpacing: 1 }}>{valB.toFixed(1)}</span>
+</div>
+</div>
+<div style={{ height: 5, background: “#1e293b”, borderRadius: 99, overflow: “hidden” }}>
+<div style={{ width: `${Math.min((valB / max) * 100, 100)}%`, height: “100%”, background: COLORS.b, borderRadius: 99, boxShadow: `0 0 6px ${COLORS.b}88`, transition: “width 0.8s cubic-bezier(0.16,1,0.3,1)” }} />
+</div>
+</div>
+)}
+</div>
+);
+}
+
+function Scoreboard({ resA, resB, nameA, nameB }) {
+let aWins = 0, bWins = 0;
+STAT_KEYS.forEach(({ key }) => {
+const a = resA?.[key], b = resB?.[key];
+if (a !== undefined && b !== undefined) { if (a > b) aWins++; else if (b > a) bWins++; }
+});
+const total = aWins + bWins;
+if (total === 0) return null;
+const winner = aWins > bWins ? (nameA || “Player A”) : bWins > aWins ? (nameB || “Player B”) : null;
+const winColor = aWins >= bWins ? COLORS.a : COLORS.b;
+return (
+<div style={{ background: “#0a1628”, border: “1px solid #1e293b”, borderRadius: 12, padding: 20, marginBottom: 20, textAlign: “center” }}>
+<div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 9, color: “#475569”, letterSpacing: 3, textTransform: “uppercase”, marginBottom: 14 }}>Head to Head</div>
+<div style={{ display: “flex”, justifyContent: “center”, alignItems: “center”, gap: 32, marginBottom: 14 }}>
+<div>
+<div style={{ fontFamily: “‘Bebas Neue’, cursive”, fontSize: 54, color: COLORS.a, lineHeight: 1 }}>{aWins}</div>
+<div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 9, color: “#64748b”, marginTop: 4 }}>{nameA || “Player A”}</div>
+</div>
+<div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 10, color: “#1e293b” }}>VS</div>
+<div>
+<div style={{ fontFamily: “‘Bebas Neue’, cursive”, fontSize: 54, color: COLORS.b, lineHeight: 1 }}>{bWins}</div>
+<div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 9, color: “#64748b”, marginTop: 4 }}>{nameB || “Player B”}</div>
+</div>
+</div>
+{winner
+? <div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 10, color: winColor, background: `${winColor}11`, border: `1px solid ${winColor}33`, borderRadius: 99, padding: “6px 18px”, display: “inline-block” }}>{winner} wins {Math.max(aWins,bWins)}–{Math.min(aWins,bWins)}</div>
+: <div style={{ fontFamily: “‘Space Mono’, monospace”, fontSize: 10, color: “#64748b” }}>Dead heat</div>
+}
+</div>
+);
+}
+
+const empty = () => ({ name: “”, year: “”, ppg: “”, ts: “”, bpm: “”, ast: “”, dbpm: “”, ortg: “”, drtg: “” });
+
+export default function App() {
+const [mode, setMode] = useState(“player”);
+const [compareMode, setCompareMode] = useState(false);
+const [a, setA] = useState(empty());
+const [b, setB] = useState(empty());
+const [results, setResults] = useState(null);
+
+function updateA(k, v) { setA(p => ({ …p, [k]: v })); setResults(null); }
+function updateB(k, v) { setB(p => ({ …p, [k]: v })); setResults(null); }
+
+function calculate() {
+const resA = calcStats(a, mode);
+const resB = compareMode ? calcStats(b, mode) : null;
+if (!resA) return;
+setResults({ resA, resB });
+}
+
+return (
+<div style={{ minHeight: “100vh”, background: “#020817”, color: “#f1f5f9”, fontFamily: “sans-serif”, padding: “36px 16px” }}>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<div style={{ maxWidth: 700, margin: “0 auto” }}>
+
+```
+    {/* Header */}
+    <div style={{ marginBottom: 28 }}>
+      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: "#00f5a0", letterSpacing: 4, textTransform: "uppercase", marginBottom: 6 }}>Era-Adjusted</div>
+      <div style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 50, lineHeight: 1, letterSpacing: 2, background: "linear-gradient(135deg, #f1f5f9, #475569)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>STAT+<br />CALCULATOR</div>
+      <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: "#334155", marginTop: 8, lineHeight: 1.7 }}>100 = league average · adjusted for pace & scoring era</div>
+    </div>
+
+    {/* Controls */}
+    <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
+      <div style={{ display: "flex", gap: 8, flex: 1 }}>
+        {["player", "team", "both"].map(m => (
+          <button key={m} onClick={() => { setMode(m); setResults(null); }} style={{
+            flex: 1, padding: "9px 0", borderRadius: 8,
+            background: mode === m ? "#00f5a0" : "#0f172a",
+            color: mode === m ? "#020817" : "#64748b",
+            border: `1px solid ${mode === m ? "#00f5a0" : "#1e293b"}`,
+            fontFamily: "'Space Mono', monospace", fontSize: 9,
+            letterSpacing: 1, textTransform: "uppercase", cursor: "pointer",
+            fontWeight: mode === m ? 700 : 400, transition: "all 0.2s"
+          }}>{m}</button>
+        ))}
+      </div>
+      <button onClick={() => { setCompareMode(p => !p); setResults(null); }} style={{
+        padding: "9px 14px", borderRadius: 8,
+        background: compareMode ? "#38bdf8" : "#0f172a",
+        color: compareMode ? "#020817" : "#64748b",
+        border: `1px solid ${compareMode ? "#38bdf8" : "#1e293b"}`,
+        fontFamily: "'Space Mono', monospace", fontSize: 9,
+        letterSpacing: 1, textTransform: "uppercase", cursor: "pointer",
+        fontWeight: compareMode ? 700 : 400, transition: "all 0.2s", whiteSpace: "nowrap"
+      }}>⇄ Compare</button>
+    </div>
+
+    {/* Panels */}
+    <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
+      <PlayerPanel label="Player A" color={COLORS.a} inputs={a} onChange={updateA} mode={mode} />
+      {compareMode && <PlayerPanel label="Player B" color={COLORS.b} inputs={b} onChange={updateB} mode={mode} />}
+    </div>
+
+    <button onClick={calculate} style={{
+      width: "100%", padding: "13px 0", marginBottom: 26,
+      background: "linear-gradient(135deg, #00f5a0, #00c896)",
+      color: "#020817", borderRadius: 10, border: "none",
+      fontFamily: "'Bebas Neue', cursive", fontSize: 22, letterSpacing: 3,
+      cursor: "pointer", transition: "opacity 0.2s",
+    }}
+      onMouseEnter={e => e.currentTarget.style.opacity = "0.85"}
+      onMouseLeave={e => e.currentTarget.style.opacity = "1"}
+    >CALCULATE</button>
+
+    {/* Results */}
+    {results && (
+      <div>
+        {compareMode && results.resA && results.resB && (
+          <Scoreboard resA={results.resA} resB={results.resB} nameA={a.name} nameB={b.name} />
+        )}
+        <div style={{ background: "#0a1628", border: "1px solid #1e293b", borderRadius: 14, padding: 24, marginBottom: 14 }}>
+          {compareMode
+            ? STAT_KEYS.map(({ key, label }) => (
+                <CompareRow key={key} statLabel={label} valA={results.resA?.[key]} valB={results.resB?.[key]} nameA={a.name} nameB={b.name} />
+              ))
+            : STAT_KEYS.map(({ key, label }) => {
+                const val = results.resA?.[key];
+                if (val === undefined) return null;
+                const color = getColor(val);
+                return (
+                  <div key={key} style={{ marginBottom: 18 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 9, color: "#475569", letterSpacing: 2, textTransform: "uppercase" }}>{label}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color, background: `${color}22`, padding: "2px 8px", borderRadius: 99 }}>{getLabel(val)}</span>
+                        <span style={{ fontFamily: "'Bebas Neue', cursive", fontSize: 26, color, letterSpacing: 1 }}>{val.toFixed(1)}</span>
+                      </div>
+                    </div>
+                    <div style={{ height: 5, background: "#1e293b", borderRadius: 99, overflow: "hidden" }}>
+                      <div style={{ width: `${Math.min((val / 200) * 100, 100)}%`, height: "100%", background: color, borderRadius: 99, boxShadow: `0 0 6px ${color}88`, transition: "width 0.8s cubic-bezier(0.16,1,0.3,1)" }} />
+                    </div>
+                  </div>
+                );
+              })
+          }
+        </div>
+
+        {/* Legend */}
+        <div style={{ background: "#0a1628", border: "1px solid #1e293b", borderRadius: 12, padding: 16 }}>
+          <div style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: "#334155", letterSpacing: 2, textTransform: "uppercase", marginBottom: 10 }}>Scale Reference</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 20px" }}>
+            {[["160+","#00f5a0","All-Time Elite"],["130–159","#4ade80","MVP Caliber"],["115–129","#86efac","All-Star"],["100–114","#cbd5e1","Above Avg"],["85–99","#fca5a5","Below Avg"],["<85","#f87171","Replacement"]].map(([r,c,l]) => (
+              <div key={r} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 7, height: 7, borderRadius: "50%", background: c, flexShrink: 0 }} />
+                <span style={{ fontFamily: "'Space Mono', monospace", fontSize: 8, color: "#475569" }}>{r} · {l}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+</div>
+```
+
+);
+}
