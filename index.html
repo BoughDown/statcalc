@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>STAT+ Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#020817;color:#f1f5f9;font-family:sans-serif;padding:32px 16px;min-height:100vh}
+  .container{max-width:700px;margin:0 auto}
+  .mono{font-family:'Space Mono',monospace}
+  .bebas{font-family:'Bebas Neue',cursive}
+  label{font-family:'Space Mono',monospace;font-size:9px;color:#64748b;letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:4px}
+  input[type=number],input[type=text]{width:100%;background:#020817;border:1px solid #1e293b;border-radius:6px;padding:8px 10px;color:#f1f5f9;font-family:'Space Mono',monospace;font-size:12px;outline:none;transition:border-color 0.2s;-webkit-appearance:none}
+  input:focus{border-color:#00f5a0}
+  button{cursor:pointer;border:none;transition:all 0.2s}
+  .tag{font-family:'Space Mono',monospace;font-size:8px;padding:2px 8px;border-radius:99px}
+  .bar-track{height:5px;background:#1e293b;border-radius:99px;overflow:hidden;margin-top:4px}
+  .bar-fill{height:100%;border-radius:99px;transition:width 0.8s cubic-bezier(0.16,1,0.3,1)}
+  .panel{background:#0a1628;border-radius:12px;padding:18px;flex:1;min-width:0}
+  .panels{display:flex;gap:12px;margin-bottom:14px}
+  .results-box{background:#0a1628;border:1px solid #1e293b;border-radius:14px;padding:22px;margin-bottom:14px}
+  .legend-box{background:#0a1628;border:1px solid #1e293b;border-radius:12px;padding:16px}
+  .scoreboard{background:#0a1628;border:1px solid #1e293b;border-radius:12px;padding:20px;margin-bottom:20px;text-align:center}
+  .mode-row{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+  .mode-btn{flex:1;padding:9px 0;border-radius:8px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase}
+  .compare-btn{padding:9px 14px;border-radius:8px;font-family:'Space Mono',monospace;font-size:9px;letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+  .calc-btn{width:100%;padding:13px 0;margin-bottom:26px;background:linear-gradient(135deg,#00f5a0,#00c896);color:#020817;border-radius:10px;font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:3px}
+  .calc-btn:active{opacity:0.8}
+  .stat-row{margin-bottom:18px}
+  .stat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+  .compare-row{margin-bottom:20px}
+  .compare-bar-row{margin-bottom:6px}
+  .compare-name-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:3px}
+  .legend-dots{display:flex;flex-wrap:wrap;gap:6px 20px}
+  .legend-item{display:flex;align-items:center;gap:6px}
+  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+  .hint{font-family:'Space Mono',monospace;font-size:8px;color:#334155;margin-top:3px}
+  .avg-hint{font-family:'Space Mono',monospace;font-size:8px;color:#334155;margin-bottom:12px;margin-top:-8px}
+  .err-hint{font-family:'Space Mono',monospace;font-size:8px;color:#f87171;margin-bottom:12px;margin-top:-8px}
+  .section-label{font-family:'Space Mono',monospace;font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px}
+  .field{margin-bottom:12px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="margin-bottom:28px">
+    <div class="mono" style="font-size:9px;color:#00f5a0;letter-spacing:4px;text-transform:uppercase;margin-bottom:6px">Era-Adjusted</div>
+    <div class="bebas" style="font-size:50px;line-height:1;letter-spacing:2px;background:linear-gradient(135deg,#f1f5f9,#475569);-webkit-background-clip:text;-webkit-text-fill-color:transparent">STAT+<br>CALCULATOR</div>
+    <div class="mono" style="font-size:9px;color:#334155;margin-top:8px;line-height:1.7">100 = league average · adjusted for pace & scoring era</div>
+  </div>
+
+  <div class="mode-row">
+    <div style="display:flex;gap:8px;flex:1">
+      <button class="mode-btn" id="btn-player" onclick="setMode('player')">Player</button>
+      <button class="mode-btn" id="btn-team" onclick="setMode('team')">Team</button>
+      <button class="mode-btn" id="btn-both" onclick="setMode('both')">Both</button>
+    </div>
+    <button class="compare-btn" id="btn-compare" onclick="toggleCompare()">⇄ Compare</button>
+  </div>
+
+  <div class="panels" id="panels">
+    <div class="panel" id="panel-a" style="border:1px solid #00f5a033;border-top:3px solid #00f5a0"></div>
+    <div class="panel" id="panel-b" style="border:1px solid #38bdf833;border-top:3px solid #38bdf8;display:none"></div>
+  </div>
+
+<button class="calc-btn" onclick="calculate()">CALCULATE</button>
+
+  <div id="results"></div>
+</div>
+
+<script>
+const LA = {
+  1950:{ppg:13.8,ts:0.411,ortg:91.2,drtg:91.2,pace:99.0,ast:15.2},
+  1951:{ppg:14.3,ts:0.418,ortg:92.1,drtg:92.1,pace:99.0,ast:15.4},
+  1952:{ppg:14.9,ts:0.421,ortg:93.5,drtg:93.5,pace:100.2,ast:15.6},
+  1953:{ppg:15.4,ts:0.427,ortg:94.0,drtg:94.0,pace:100.4,ast:15.8},
+  1954:{ppg:14.8,ts:0.423,ortg:91.8,drtg:91.8,pace:99.1,ast:15.5},
+  1955:{ppg:14.9,ts:0.432,ortg:93.1,drtg:93.1,pace:101.4,ast:15.7},
+  1956:{ppg:15.9,ts:0.438,ortg:95.0,drtg:95.0,pace:103.2,ast:16.0},
+  1957:{ppg:16.2,ts:0.441,ortg:95.8,drtg:95.8,pace:103.8,ast:16.2},
+  1958:{ppg:16.8,ts:0.444,ortg:97.0,drtg:97.0,pace:106.0,ast:16.4},
+  1959:{ppg:18.2,ts:0.452,ortg:101.5,drtg:101.5,pace:118.0,ast:16.6},
+  1960:{ppg:18.5,ts:0.455,ortg:102.6,drtg:102.6,pace:126.1,ast:16.8},
+  1961:{ppg:19.0,ts:0.461,ortg:104.0,drtg:104.0,pace:127.1,ast:17.0},
+  1962:{ppg:19.4,ts:0.463,ortg:105.2,drtg:105.2,pace:125.8,ast:17.1},
+  1963:{ppg:18.8,ts:0.460,ortg:103.6,drtg:103.6,pace:121.1,ast:17.2},
+  1964:{ppg:18.6,ts:0.458,ortg:103.0,drtg:103.0,pace:117.2,ast:17.3},
+  1965:{ppg:18.6,ts:0.459,ortg:103.1,drtg:103.1,pace:115.3,ast:17.4},
+  1966:{ppg:18.9,ts:0.461,ortg:104.0,drtg:104.0,pace:116.0,ast:17.5},
+  1967:{ppg:19.2,ts:0.467,ortg:105.3,drtg:105.3,pace:117.4,ast:17.6},
+  1968:{ppg:18.8,ts:0.463,ortg:104.1,drtg:104.1,pace:114.5,ast:17.5},
+  1969:{ppg:18.2,ts:0.459,ortg:102.9,drtg:102.9,pace:112.6,ast:17.4},
+  1970:{ppg:17.8,ts:0.461,ortg:103.6,drtg:103.6,pace:110.1,ast:17.6},
+  1971:{ppg:17.5,ts:0.459,ortg:102.6,drtg:102.6,pace:108.3,ast:17.7},
+  1972:{ppg:17.4,ts:0.460,ortg:102.8,drtg:102.8,pace:107.5,ast:17.8},
+  1973:{ppg:17.9,ts:0.467,ortg:104.5,drtg:104.5,pace:109.3,ast:17.9},
+  1974:{ppg:17.6,ts:0.470,ortg:104.9,drtg:104.9,pace:107.8,ast:18.0},
+  1975:{ppg:17.8,ts:0.474,ortg:105.3,drtg:105.3,pace:108.4,ast:18.1},
+  1976:{ppg:17.8,ts:0.476,ortg:105.5,drtg:105.5,pace:107.9,ast:18.2},
+  1977:{ppg:18.3,ts:0.483,ortg:106.8,drtg:106.8,pace:109.2,ast:18.3},
+  1978:{ppg:18.4,ts:0.488,ortg:107.5,drtg:107.5,pace:109.6,ast:18.4},
+  1979:{ppg:18.5,ts:0.491,ortg:108.0,drtg:108.0,pace:109.9,ast:18.5},
+  1980:{ppg:18.8,ts:0.498,ortg:108.9,drtg:108.9,pace:110.4,ast:18.6},
+  1981:{ppg:18.5,ts:0.496,ortg:108.1,drtg:108.1,pace:108.8,ast:18.5},
+  1982:{ppg:18.6,ts:0.499,ortg:108.6,drtg:108.6,pace:109.0,ast:18.6},
+  1983:{ppg:18.4,ts:0.496,ortg:108.0,drtg:108.0,pace:108.6,ast:18.7},
+  1984:{ppg:19.0,ts:0.503,ortg:109.5,drtg:109.5,pace:109.7,ast:18.8},
+  1985:{ppg:19.8,ts:0.516,ortg:110.8,drtg:110.8,pace:111.2,ast:19.0},
+  1986:{ppg:19.9,ts:0.518,ortg:111.3,drtg:111.3,pace:111.5,ast:19.1},
+  1987:{ppg:20.5,ts:0.524,ortg:112.4,drtg:112.4,pace:112.1,ast:19.3},
+  1988:{ppg:20.0,ts:0.521,ortg:111.5,drtg:111.5,pace:110.6,ast:19.2},
+  1989:{ppg:19.7,ts:0.520,ortg:111.1,drtg:111.1,pace:110.0,ast:19.1},
+  1990:{ppg:19.7,ts:0.522,ortg:111.3,drtg:111.3,pace:110.0,ast:19.0},
+  1991:{ppg:19.3,ts:0.518,ortg:110.4,drtg:110.4,pace:108.7,ast:18.9},
+  1992:{ppg:18.9,ts:0.514,ortg:109.5,drtg:109.5,pace:107.4,ast:18.8},
+  1993:{ppg:19.3,ts:0.518,ortg:110.4,drtg:110.4,pace:107.8,ast:18.9},
+  1994:{ppg:18.0,ts:0.511,ortg:107.4,drtg:107.4,pace:105.0,ast:18.5},
+  1995:{ppg:18.2,ts:0.514,ortg:107.9,drtg:107.9,pace:105.5,ast:18.6},
+  1996:{ppg:18.2,ts:0.515,ortg:108.1,drtg:108.1,pace:105.8,ast:18.6},
+  1997:{ppg:18.2,ts:0.515,ortg:108.2,drtg:108.2,pace:105.3,ast:18.7},
+  1998:{ppg:17.9,ts:0.512,ortg:107.5,drtg:107.5,pace:103.8,ast:18.5},
+  1999:{ppg:17.0,ts:0.503,ortg:104.8,drtg:104.8,pace:101.7,ast:18.2},
+  2000:{ppg:17.8,ts:0.511,ortg:106.3,drtg:106.3,pace:103.8,ast:18.4},
+  2001:{ppg:18.0,ts:0.515,ortg:106.9,drtg:106.9,pace:104.1,ast:18.5},
+  2002:{ppg:17.8,ts:0.514,ortg:106.5,drtg:106.5,pace:103.6,ast:18.4},
+  2003:{ppg:17.9,ts:0.516,ortg:106.8,drtg:106.8,pace:103.8,ast:18.5},
+  2004:{ppg:17.0,ts:0.506,ortg:104.3,drtg:104.3,pace:101.9,ast:18.1},
+  2005:{ppg:17.2,ts:0.513,ortg:105.1,drtg:105.1,pace:102.0,ast:18.2},
+  2006:{ppg:17.9,ts:0.522,ortg:106.8,drtg:106.8,pace:103.3,ast:18.5},
+  2007:{ppg:18.0,ts:0.525,ortg:107.0,drtg:107.0,pace:103.6,ast:18.6},
+  2008:{ppg:18.0,ts:0.527,ortg:107.0,drtg:107.0,pace:103.3,ast:18.6},
+  2009:{ppg:17.9,ts:0.526,ortg:107.0,drtg:107.0,pace:103.0,ast:18.7},
+  2010:{ppg:17.8,ts:0.527,ortg:107.3,drtg:107.3,pace:102.4,ast:18.7},
+  2011:{ppg:17.7,ts:0.527,ortg:107.3,drtg:107.3,pace:102.4,ast:18.8},
+  2012:{ppg:17.8,ts:0.530,ortg:107.9,drtg:107.9,pace:103.0,ast:18.9},
+  2013:{ppg:18.0,ts:0.533,ortg:108.3,drtg:108.3,pace:103.0,ast:19.0},
+  2014:{ppg:18.3,ts:0.538,ortg:108.8,drtg:108.8,pace:103.4,ast:19.2},
+  2015:{ppg:18.7,ts:0.542,ortg:109.4,drtg:109.4,pace:103.8,ast:19.4},
+  2016:{ppg:19.0,ts:0.544,ortg:109.7,drtg:109.7,pace:104.6,ast:19.6},
+  2017:{ppg:19.3,ts:0.549,ortg:110.5,drtg:110.5,pace:105.6,ast:19.8},
+  2018:{ppg:19.8,ts:0.556,ortg:111.2,drtg:111.2,pace:106.5,ast:20.0},
+  2019:{ppg:20.0,ts:0.560,ortg:111.8,drtg:111.8,pace:107.0,ast:20.2},
+  2020:{ppg:19.8,ts:0.558,ortg:111.6,drtg:111.6,pace:106.4,ast:20.1},
+  2021:{ppg:19.9,ts:0.564,ortg:112.3,drtg:112.3,pace:106.5,ast:20.3},
+  2022:{ppg:20.0,ts:0.564,ortg:112.3,drtg:112.3,pace:106.4,ast:20.4},
+  2023:{ppg:20.1,ts:0.570,ortg:113.0,drtg:113.0,pace:106.5,ast:20.5},
+  2024:{ppg:20.3,ts:0.573,ortg:113.6,drtg:113.6,pace:107.0,ast:20.6},
+  2025:{ppg:20.5,ts:0.576,ortg:114.0,drtg:114.0,pace:107.4,ast:20.7},
+};
+
+const STAT_KEYS = [
+  {key:'ppgPlus',label:'PPG+'},
+  {key:'tsPlus',label:'TS%+'},
+  {key:'astPlus',label:'AST%+'},
+  {key:'bpmPlus',label:'BPM+'},
+  {key:'dbpmPlus',label:'DBPM+'},
+  {key:'ortgPlus',label:'Off PPG+'},
+  {key:'drtgPlus',label:'Def PPG+'},
+];
+
+let mode='player', compareOn=false;
+
+function getColor(v){
+  if(v>=160)return'#00f5a0';
+  if(v>=130)return'#4ade80';
+  if(v>=115)return'#86efac';
+  if(v>=100)return'#cbd5e1';
+  if(v>=85)return'#fca5a5';
+  return'#f87171';
+}
+function getLabel(v){
+  if(v>=160)return'All-Time Elite';
+  if(v>=130)return'MVP Caliber';
+  if(v>=115)return'All-Star';
+  if(v>=100)return'Above Avg';
+  if(v>=85)return'Below Avg';
+  return'Replacement';
+}
+
+function calcStats(inputs){
+  const y=parseInt(inputs.year);
+  if(!LA[y])return null;
+  const avg=LA[y];
+  const r={};
+  if(mode==='player'||mode==='both'){
+    if(inputs.ppg)r.ppgPlus=((parseFloat(inputs.ppg)*(107/avg.pace))/avg.ppg)*100;
+    if(inputs.ts)r.tsPlus=(parseFloat(inputs.ts)/avg.ts)*100;
+    if(inputs.ast)r.astPlus=(parseFloat(inputs.ast)/avg.ast)*100;
+    if(inputs.bpm){const v=parseFloat(inputs.bpm);r.bpmPlus=v<=0?Math.max(40,100+v*8):100+(Math.log(v+1)/Math.log(11))*63;}
+    if(inputs.dbpm){const d=parseFloat(inputs.dbpm);r.dbpmPlus=d<=0?Math.max(40,100+d*8):100+(Math.log(d+1)/Math.log(9))*63;}
+  }
+  if(mode==='team'||mode==='both'){
+    if(inputs.ortg)r.ortgPlus=(parseFloat(inputs.ortg)/avg.ortg)*100;
+    if(inputs.drtg)r.drtgPlus=(avg.drtg/parseFloat(inputs.drtg))*100;
+  }
+  return r;
+}
+
+function getInputs(p){
+  const g=id=>document.getElementById(p+'-'+id);
+  return{year:g('year')?g('year').value:'',name:g('name')?g('name').value:'',ppg:g('ppg')?g('ppg').value:'',ts:g('ts')?g('ts').value:'',ast:g('ast')?g('ast').value:'',bpm:g('bpm')?g('bpm').value:'',dbpm:g('dbpm')?g('dbpm').value:'',ortg:g('ortg')?g('ortg').value:'',drtg:g('drtg')?g('drtg').value:''};
+}
+
+function buildPanel(p,color,label){
+  const sp=mode==='player'||mode==='both';
+  const st=mode==='team'||mode==='both';
+  return`<div class="section-label" style="color:${color}">${label}</div>
+    <div class="field"><label>Name</label><input type="text" id="${p}-name" placeholder="e.g. Kareem"></div>
+    <div class="field"><label>Season Year</label><input type="number" id="${p}-year" placeholder="1950–2025" min="1950" max="2025" oninput="updateHint('${p}')"></div>
+    <div id="${p}-avg-hint" class="avg-hint"></div>
+    ${sp?`
+    <div class="field"><label>PPG</label><input type="number" step="0.1" id="${p}-ppg" placeholder="e.g. 34.8"><div class="hint">Points per game</div></div>
+    <div class="field"><label>TS%</label><input type="number" step="0.001" id="${p}-ts" placeholder="e.g. 0.559"><div class="hint">Decimal (e.g. 0.580)</div></div>
+    <div class="field"><label>AST%</label><input type="number" step="0.1" id="${p}-ast" placeholder="e.g. 38.5"><div class="hint">% of teammate FGs assisted</div></div>
+    <div class="field"><label>BPM</label><input type="number" step="0.1" id="${p}-bpm" placeholder="e.g. 8.2"><div class="hint">Box Plus/Minus (rate stat)</div></div>
+    <div class="field"><label>DBPM</label><input type="number" step="0.1" id="${p}-dbpm" placeholder="e.g. 3.4"><div class="hint">Defensive Box Plus/Minus</div></div>
+    `:''}
+    ${st?`
+    <div class="field"><label>Off. Rating</label><input type="number" step="0.1" id="${p}-ortg" placeholder="e.g. 118.4"><div class="hint">Pts per 100 possessions</div></div>
+    <div class="field"><label>Def. Rating</label><input type="number" step="0.1" id="${p}-drtg" placeholder="e.g. 108.1"><div class="hint">Pts allowed per 100</div></div>
+    `:''}`;
+}
+
+function updateHint(p){
+  const yr=parseInt(document.getElementById(p+'-year').value);
+  const el=document.getElementById(p+'-avg-hint');
+  if(LA[yr]){const a=LA[yr];el.style.color='#334155';el.textContent=`${yr} avg: ${a.ppg}ppg · ${(a.ts*100).toFixed(1)}TS% · pace ${a.pace}`;}
+  else if(document.getElementById(p+'-year').value){el.style.color='#f87171';el.textContent='Invalid year (1950–2025)';}
+  else el.textContent='';
+}
+
+function renderPanels(){
+  document.getElementById('panel-a').innerHTML=buildPanel('a','#00f5a0','Player A');
+  const pb=document.getElementById('panel-b');
+  pb.innerHTML=buildPanel('b','#38bdf8','Player B');
+  pb.style.display=compareOn?'block':'none';
+}
+
+function setMode(m){
+  mode=m;
+  ['player','team','both'].forEach(x=>{
+    const b=document.getElementById('btn-'+x);
+    if(x===m){b.style.background='#00f5a0';b.style.color='#020817';b.style.border='1px solid #00f5a0';b.style.fontWeight='700';}
+    else{b.style.background='#0f172a';b.style.color='#64748b';b.style.border='1px solid #1e293b';b.style.fontWeight='400';}
+  });
+  renderPanels();
+  document.getElementById('results').innerHTML='';
+}
+
+function toggleCompare(){
+  compareOn=!compareOn;
+  const b=document.getElementById('btn-compare');
+  if(compareOn){b.style.background='#38bdf8';b.style.color='#020817';b.style.border='1px solid #38bdf8';b.style.fontWeight='700';}
+  else{b.style.background='#0f172a';b.style.color='#64748b';b.style.border='1px solid #1e293b';b.style.fontWeight='400';}
+  renderPanels();
+  document.getElementById('results').innerHTML='';
+}
+
+function statRowHTML(label,val){
+  if(val===undefined)return'';
+  const c=getColor(val),pct=Math.min((val/200)*100,100);
+  return`<div class="stat-row"><div class="stat-header"><span class="mono" style="font-size:9px;color:#475569;letter-spacing:2px;text-transform:uppercase">${label}</span><div style="display:flex;align-items:center;gap:8px"><span class="tag" style="color:${c};background:${c}22">${getLabel(val)}</span><span class="bebas" style="font-size:26px;color:${c};letter-spacing:1px">${val.toFixed(1)}</span></div></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${c};box-shadow:0 0 6px ${c}88"></div></div></div>`;
+}
+
+function compareRowHTML(statLabel,valA,valB,nameA,nameB){
+  if(valA===undefined&&valB===undefined)return'';
+  const aW=valA!==undefined&&valB!==undefined&&valA>valB;
+  const bW=valA!==undefined&&valB!==undefined&&valB>valA;
+  const max=Math.max(valA||0,valB||0,160);
+  let h=`<div class="compare-row"><div class="mono" style="font-size:9px;color:#475569;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px">${statLabel}</div>`;
+  if(valA!==undefined){const c='#00f5a0',pct=Math.min((valA/max)*100,100);h+=`<div class="compare-bar-row"><div class="compare-name-row"><span class="mono" style="font-size:9px;color:${aW?c:'#64748b'}">${nameA||'Player A'}${aW?' ▲':''}</span><div style="display:flex;align-items:center;gap:8px"><span class="tag" style="color:${getColor(valA)};background:${getColor(valA)}22">${getLabel(valA)}</span><span class="bebas" style="font-size:22px;color:${aW?c:'#94a3b8'};letter-spacing:1px">${valA.toFixed(1)}</span></div></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${c};box-shadow:0 0 6px ${c}88"></div></div></div>`;}
+  if(valB!==undefined){const c='#38bdf8',pct=Math.min((valB/max)*100,100);h+=`<div class="compare-bar-row"><div class="compare-name-row"><span class="mono" style="font-size:9px;color:${bW?c:'#64748b'}">${nameB||'Player B'}${bW?' ▲':''}</span><div style="display:flex;align-items:center;gap:8px"><span class="tag" style="color:${getColor(valB)};background:${getColor(valB)}22">${getLabel(valB)}</span><span class="bebas" style="font-size:22px;color:${bW?c:'#94a3b8'};letter-spacing:1px">${valB.toFixed(1)}</span></div></div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${c};box-shadow:0 0 6px ${c}88"></div></div></div>`;}
+  return h+'</div>';
+}
+
+function calculate(){
+  const inA=getInputs('a'),inB=getInputs('b');
+  const resA=calcStats(inA),resB=compareOn?calcStats(inB):null;
+  if(!resA){alert('Enter a valid year (1950–2025) for Player A');return;}
+  let html='';
+  if(compareOn&&resA&&resB){
+    let aW=0,bW=0;
+    STAT_KEYS.forEach(({key})=>{const a=resA[key],b=resB[key];if(a!==undefined&&b!==undefined){if(a>b)aW++;else if(b>a)bW++;}});
+    const winner=aW>bW?(inA.name||'Player A'):bW>aW?(inB.name||'Player B'):null;
+    const wc=aW>=bW?'#00f5a0':'#38bdf8';
+    html+=`<div class="scoreboard"><div class="mono" style="font-size:9px;color:#475569;letter-spacing:3px;text-transform:uppercase;margin-bottom:14px">Head to Head</div><div style="display:flex;justify-content:center;align-items:center;gap:32px;margin-bottom:14px"><div><div class="bebas" style="font-size:54px;color:#00f5a0;line-height:1">${aW}</div><div class="mono" style="font-size:9px;color:#64748b;margin-top:4px">${inA.name||'Player A'}</div></div><div class="mono" style="font-size:10px;color:#1e293b">VS</div><div><div class="bebas" style="font-size:54px;color:#38bdf8;line-height:1">${bW}</div><div class="mono" style="font-size:9px;color:#64748b;margin-top:4px">${inB.name||'Player B'}</div></div></div>${winner?`<div class="mono" style="font-size:10px;color:${wc};background:${wc}11;border:1px solid ${wc}33;border-radius:99px;padding:6px 18px;display:inline-block">${winner} wins ${Math.max(aW,bW)}–${Math.min(aW,bW)}</div>`:`<div class="mono" style="font-size:10px;color:#64748b">Dead heat</div>`}</div>`;
+  }
+  html+='<div class="results-box">';
+  if(compareOn){STAT_KEYS.forEach(({key,label})=>{html+=compareRowHTML(label,resA[key],resB?resB[key]:undefined,inA.name,inB.name);});}
+  else{STAT_KEYS.forEach(({key,label})=>{if(resA[key]!==undefined)html+=statRowHTML(label,resA[key]);});}
+  html+='</div>';
+  html+=`<div class="legend-box"><div class="mono" style="font-size:8px;color:#334155;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px">Scale Reference</div><div class="legend-dots">${[['160+','#00f5a0','All-Time Elite'],['130–159','#4ade80','MVP Caliber'],['115–129','#86efac','All-Star'],['100–114','#cbd5e1','Above Avg'],['85–99','#fca5a5','Below Avg'],['<85','#f87171','Replacement']].map(([r,c,l])=>`<div class="legend-item"><div class="dot" style="background:${c}"></div><span class="mono" style="font-size:8px;color:#475569">${r} · ${l}</span></div>`).join('')}</div></div>`;
+  document.getElementById('results').innerHTML=html;
+  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+}
+
+setMode('player');
+</script>
+
+</body>
+</html>
